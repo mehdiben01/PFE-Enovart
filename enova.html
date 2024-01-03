@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 20px;
+        }
+
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        select, input, button {
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            margin-top: 20px;
+        }
+
+        #items {
+            margin-bottom: 20px;
+        }
+
+        .item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .item label {
+            margin-left: 10px;
+        }
+
+        table {
+            margin-top: 20px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .btn-save {
+            background-color: #ffa500;
+            color: #fff;
+            margin-right: 5px;
+        }
+
+        .btn-reset {
+            margin-left: 5px;
+        }
+
+        .btn-delete {
+            background-color: #dc3545;
+            color: #fff;
+        }
+
+        .inline-form-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .inline-form-group label {
+            margin-right: 10px;
+        }
+    </style>
+    <title>Formulaire de Tâche</title>
+</head>
+<body>
+
+<form action="#" method="post" onreset="resetForm()" onsubmit="saveToTable(); return false;">
+    <h5><b>Nouvelle Tache</b></h5><br>
+    <label for="title">Titre:</label>
+    <input type="text" id="title" name="title" class="form-control" required><br>
+
+    <label for="category">Catégorie:</label>
+    <div class="inline-form-group">
+        <select id="category" name="category" class="form-control" onchange="checkCategory()">
+            <option value="non Spécifié">Non Spécifié</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="incident">Incident</option>
+        </select>
+    </div>
+
+    <div id="maintenanceWarning" style="display:none; color:red;">
+        Ajoutez des équipements sur la page de l'unité ou du bâtiment pour ne plus jamais avoir à créer de tâche de maintenance.
+    </div>
+
+    <label for="ownerType">Propriétaire:</label>
+    <select id="ownerType" name="ownerType" class="form-control" onchange="checkOwnerType()">
+        <option value="">Choisir</option>
+        <option value="unit">Unité</option>
+        <option value="building">Bâtiment</option>
+    </select><br>
+
+    <label for="owner">Unité/Bâtiment:</label>
+    <select id="owner" name="owner" class="form-control" required>
+        <option value="">Choisir d'abord la catégorie et le propriétaire</option>
+    </select><br>
+    <label for="owner">Sous-taches:</label>
+    <div id="items">
+    </div>
+    <div>
+        <input type="text" id="new-item" class="form-control" placeholder="Nouvel élément">
+        <button type="button" class="btn btn-primary" onclick="addItem()">Ajouter</button>
+    </div>
+
+    <div style="text-align: right;">
+        <input type="reset" class="btn btn-secondary btn-reset" value="Réinitialiser">
+        <input type="submit" class="btn btn-save" value="Enregistrer">
+    </div>
+</form>
+
+<table id="taskTable" class="table table-bordered">
+    <thead class="thead-light">
+    <tr>
+        <th>Titre</th>
+        <th>Catégorie</th>
+        <th>Propriétaire</th>
+        <th>Éléments</th>
+    </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+
+<script>
+    var initialTitle = "";
+    var initialCategory = "";
+    var initialOwnerType = "";
+    var initialOwner = "";
+
+    function checkCategory() {
+        var category = document.getElementById("category").value;
+        var maintenanceWarning = document.getElementById("maintenanceWarning");
+
+        if (category === "maintenance") {
+            maintenanceWarning.style.display = "block";
+        } else {
+            maintenanceWarning.style.display = "none";
+        }
+        document.getElementById("ownerType").value = "";
+        document.getElementById("owner").innerHTML = '<option value="">Choisir d\'abord la catégorie et le propriétaire';
+    }
+
+    function checkOwnerType() {
+        var ownerType = document.getElementById("ownerType").value;
+        var ownerLabel = document.querySelector("label[for='owner']");
+        var ownerSelect = document.getElementById("owner");
+
+        var options = [];
+        if (ownerType === "unit") {
+            options = [
+                { type: "Unit", id: "U1", name: "My Unit 1" },
+                { type: "Unit", id: "U2", name: "My Unit 2" },
+                { type: "Unit", id: "U3", name: "My Unit 3" }
+            ];
+        } else if (ownerType === "building") {
+            options = [
+                { type: "Building", id: "B1", name: "My Building 1" },
+                { type: "Building", id: "B2", name: "My Building 2" },
+                { type: "Building", id: "B3", name: "My Building 3" }
+            ];
+        }
+
+        ownerLabel.textContent = ownerType === "unit" ? "Unité:" : "Bâtiment:";
+
+        ownerSelect.innerHTML = '';
+
+        var defaultOption = document.createElement("option");
+        defaultOption.value = "";
+        defaultOption.textContent = "Choisir d'abord la catégorie et le propriétaire";
+        ownerSelect.appendChild(defaultOption);
+
+        options.forEach(function (option) {
+            var optionElement = document.createElement("option");
+            optionElement.value = option.id;
+            optionElement.textContent = option.name;
+            ownerSelect.appendChild(optionElement);
+        });
+    }
+
+    function saveInitialState() {
+        initialTitle = document.getElementById("title").value;
+        initialCategory = document.getElementById("category").value;
+        initialOwnerType = document.getElementById("ownerType").value;
+        initialOwner = document.getElementById("owner").value;
+    }
+
+    function resetForm() {
+        document.getElementById("title").value = initialTitle;
+        document.getElementById("category").value = initialCategory;
+        document.getElementById("ownerType").value = initialOwnerType;
+        document.getElementById("owner").value = initialOwner;
+
+        document.getElementById("owner").innerHTML = '<option value="">Choisir d\'abord la catégorie et le propriétaire';
+        document.getElementById("ownerType").disabled = false;
+
+        checkCategory();
+    }
+
+    function addItem() {
+        var newItemInput = document.getElementById("new-item");
+        var newItemValue = newItemInput.value.trim();
+
+        if (newItemValue === "") {
+            alert("Veuillez saisir un nouvel élément.");
+            return;
+        }
+
+        var itemContainer = document.getElementById("items");
+        var newItem = document.createElement("div");
+        newItem.className = "item d-flex"; 
+
+        var checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+
+        var label = document.createElement("label");
+        label.textContent = newItemValue;
+
+        var deleteButton = document.createElement("button");
+        deleteButton.textContent = "Supprimer";
+        deleteButton.className = "btn btn-delete"; 
+        deleteButton.onclick = function () {
+            itemContainer.removeChild(newItem);
+        };
+
+        newItem.appendChild(checkbox);
+        newItem.appendChild(label);
+        newItem.appendChild(deleteButton);
+
+        itemContainer.appendChild(newItem);
+
+
+        newItemInput.value = "";
+    }
+
+
+    window.onload = saveInitialState;
+
+
+    function saveToTable() {
+        var title = document.getElementById("title").value;
+        var category = document.getElementById("category").value;
+        var ownerType = document.getElementById("ownerType").value;
+        var owner = document.getElementById("owner").value;
+
+     
+        var items = [];
+        var itemElements = document.querySelectorAll("#items .item");
+        itemElements.forEach(function (itemElement) {
+            var checkbox = itemElement.querySelector("input[type='checkbox']");
+            var label = itemElement.querySelector("label");
+
+            if (checkbox.checked) {
+                items.push(label.textContent);
+            }
+        });
+
+  
+        var table = document.getElementById("taskTable").getElementsByTagName('tbody')[0];
+        var newRow = table.insertRow(table.rows.length);
+        var cell1 = newRow.insertCell(0);
+        var cell2 = newRow.insertCell(1);
+        var cell3 = newRow.insertCell(2);
+        var cell4 = newRow.insertCell(3);
+
+        cell1.innerHTML = title;
+        cell2.innerHTML = category;
+        cell3.innerHTML = ownerType + ": " + owner;
+        cell4.innerHTML = items.join(", ");
+
+ 
+        resetForm();
+    }
+</script>
+
+</body>
+</html>
